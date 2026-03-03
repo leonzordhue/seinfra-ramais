@@ -20,7 +20,6 @@
 <div class="container">
     <h1 class="text-center">🚧 Ramais da SEINFRA/AM</h1>
 
-    <!-- Seletor de Município -->
     <div class="row mb-4">
         <div class="col-md-6">
             <label for="municipioSelect" class="form-label fw-bold">Município</label>
@@ -36,14 +35,12 @@
         </div>
     </div>
 
-    <!-- Área de detalhes (inicialmente oculta) -->
     <div id="detalhesArea" style="display: none;">
         <hr>
         <div class="details-card" id="infoRamal"></div>
         <div id="mapContainer" class="map-container"></div>
     </div>
 
-    <!-- Loading -->
     <div id="loading" class="loading">
         <div class="spinner-border text-primary" role="status"></div>
         <span class="ms-2">Carregando dados...</span>
@@ -56,35 +53,24 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-    // ========== CONFIGURAÇÕES (substitua pelos seus dados) ==========
-    const SPREADSHEET_ID = '1bYf2anVF4un84-lusSOeSRaNLiod9fq0joUEnbgHxnM'; // ID da planilha
-    const API_KEY = 'AIzaSyDaitkJNDTZi3BMFAe9u4wV6U-DIgUS7NA';               // Sua chave de API
-    const SHEET_NAME = 'Ramais';                                              // Nome da aba
-    const RANGE = `${SHEET_NAME}!A:BH`;                                       // Intervalo (todas as colunas)
-    // ==================================================================
+    // ========== CONFIGURAÇÕES ==========
+    const SPREADSHEET_ID = '1Cr5Qbj_My7oOcIYiIjZ6NgJiCsij4ZAQCSxdP49cffc';
+    const API_KEY = 'AIzaSyBrK45p0mev1t5NyDJomdDIvJTe2DWaojA';
+    // Tente primeiro com 'Ramais', se não funcionar, mude para o nome exato da sua aba
+    const SHEET_NAME = 'Ramais'; // <<< ALTERE AQUI SE NECESSÁRIO
+    const RANGE = `${SHEET_NAME}!A:ZZ`;
+    // ====================================
 
-    let sheetData = [];          // Todas as linhas (array de objetos)
-    let headers = [];            // Nomes das colunas
-    let ramaisPorMunicipio = {}; // Agrupamento para facilitar
+    let sheetData = [];
+    let ramaisPorMunicipio = {};
     let mapa = null;
 
-    // Mapeamento de colunas (índices baseados na planilha original)
     const COL = {
-        CODIGO: 0,        // A
-        NUMERO: 1,        // B
-        NOME: 2,          // C
-        MUNICIPIO: 9,     // J
-        EXTENSAO: 11,     // L
-        INICIO: 7,        // H
-        FIM: 8,           // I
-        LATITUDE: 14,     // O
-        LONGITUDE: 15,    // P
-        SITUACAO: 53,     // BB (coluna 53, zero-based)
-        REVESTIMENTO: 52, // BA
-        PONTO_REF: 6      // G
+        CODIGO: 0, NUMERO: 1, NOME: 2, MUNICIPIO: 9, EXTENSAO: 11,
+        INICIO: 7, FIM: 8, LATITUDE: 14, LONGITUDE: 15,
+        SITUACAO: 53, REVESTIMENTO: 52, PONTO_REF: 6
     };
 
-    // Inicialização
     document.addEventListener('DOMContentLoaded', carregarDados);
 
     async function carregarDados() {
@@ -94,17 +80,24 @@
         const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${RANGE}?key=${API_KEY}`;
         try {
             const resp = await fetch(url);
-            if (!resp.ok) throw new Error(`Erro HTTP: ${resp.status}`);
+            if (!resp.ok) {
+                // Se falhar, tenta listar as abas para debug
+                const sheetsInfo = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}?key=${API_KEY}`);
+                if (sheetsInfo.ok) {
+                    const info = await sheetsInfo.json();
+                    console.log('Abas disponíveis:', info.sheets.map(s => s.properties.title));
+                    alert(`A aba "${SHEET_NAME}" não foi encontrada. Abas disponíveis: ${info.sheets.map(s => s.properties.title).join(', ')}`);
+                }
+                throw new Error(`Erro HTTP: ${resp.status}`);
+            }
             const data = await resp.json();
             const rows = data.values || [];
 
             if (rows.length === 0) throw new Error('Nenhum dado encontrado');
 
-            headers = rows[0]; // primeira linha é cabeçalho
             sheetData = rows.slice(1).map((row, index) => {
-                // Converte para objeto com nomes amigáveis
                 const obj = {
-                    rowIndex: index + 2, // para referência (linha da planilha)
+                    rowIndex: index + 2,
                     codigo: row[COL.CODIGO] || '',
                     numero: row[COL.NUMERO] || '',
                     nome: row[COL.NOME] || '',
@@ -118,18 +111,15 @@
                     revestimento: row[COL.REVESTIMENTO] || '',
                     pontoReferencia: row[COL.PONTO_REF] || ''
                 };
-                // Determina se tem obra (baseado na situação)
                 const sit = obj.situacao.toUpperCase();
                 obj.temObra = sit.includes('EM OBRA') && !sit.includes('EXTINTA');
-                // Nome completo para exibição
                 const ident = [];
                 if (obj.codigo) ident.push(obj.codigo);
                 if (obj.numero) ident.push(obj.numero);
                 obj.nomeCompleto = ident.length ? ident.join(' - ') + ' - ' + obj.nome : obj.nome;
                 return obj;
-            }).filter(row => row.municipio); // remove linhas sem município
+            }).filter(row => row.municipio);
 
-            // Agrupa por município
             ramaisPorMunicipio = {};
             sheetData.forEach(ramal => {
                 const mun = ramal.municipio;
@@ -176,7 +166,7 @@
         ramais.sort((a, b) => a.nomeCompleto.localeCompare(b.nomeCompleto));
         ramais.forEach(r => {
             const opt = document.createElement('option');
-            opt.value = r.rowIndex; // usamos o índice da linha como identificador
+            opt.value = r.rowIndex;
             opt.textContent = r.nomeCompleto;
             ramalSelect.appendChild(opt);
         });
@@ -223,7 +213,6 @@
             </div>
         `;
 
-        // Atualiza mapa
         setTimeout(() => {
             if (mapa) mapa.remove();
             const mapDiv = document.getElementById('mapContainer');
