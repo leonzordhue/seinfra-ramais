@@ -521,7 +521,7 @@ Copiar
     const COL = {
       CODIGO: 0, NUMERO: 1, NOME: 2, MUNICIPIO: 9, EXTENSAO: 11,
       INICIO: 7, FIM: 8, LATITUDE: 14, LONGITUDE: 15,
-      SITUACAO: 53, REVESTIMENTO: 52, PONTO_REF: 6
+      REVESTIMENTO: 51, FONTE: 53, SITUACAO: 54, PONTO_REF: 6
     };
 
     // ========== INICIALIZAÇÃO ==========
@@ -556,6 +556,7 @@ Copiar
             longitude:      parseFloat((row[COL.LONGITUDE] || '').replace(',', '.')) || null,
             situacao:       row[COL.SITUACAO]    || '',
             revestimento:   row[COL.REVESTIMENTO]|| '',
+            fonte:          row[COL.FONTE]        || '',
             pontoReferencia:row[COL.PONTO_REF]   || ''
           };
           // valida coordenadas
@@ -594,6 +595,11 @@ Copiar
         if (!resp.ok) throw new Error('GeoJSON não encontrado');
         geoJsonData = await resp.json();
         console.log(`✅ GeoJSON carregado: ${geoJsonData.features.length} features`);
+
+        // Debug: mostra as chaves reais do primeiro feature
+        const primeiraChave = Object.keys(geoJsonData.features[0].properties);
+        console.log('🔑 Chaves do GeoJSON:', primeiraChave.filter(k => k.includes('D') || k.includes('m') || k.includes('N')));
+
       } catch (e) {
         console.warn('⚠️ GeoJSON não carregado:', e.message);
         geoJsonData = null;
@@ -603,10 +609,24 @@ Copiar
     // Busca a feature do GeoJSON que corresponde ao ramal (por CÓDIGO + Número)
     function buscarFeatureGeoJson(ramal) {
       if (!geoJsonData) return null;
+
+      const codigoAlvo  = String(ramal.codigo).trim().toUpperCase();
+      const numeroAlvo  = String(ramal.numero).trim();
+
       return geoJsonData.features.find(f => {
         const p = f.properties;
-        return String(p['CÓDIGO'])  === String(ramal.codigo) &&
-               String(p['Número']) === String(ramal.numero);
+
+        // Pega o valor de CÓDIGO tolerando variações de encoding
+        const codigoFeature = String(
+          p['CÓDIGO'] || p['CODIGO'] || p['C\u00D3DIGO'] || ''
+        ).trim().toUpperCase();
+
+        // Pega o valor de Número tolerando variações
+        const numeroFeature = String(
+          p['Número'] || p['Numero'] || p['N\u00FAmero'] || p['N\u00FAmero_2'] || ''
+        ).trim();
+
+        return codigoFeature === codigoAlvo && numeroFeature === numeroAlvo;
       }) || null;
     }
 
@@ -690,6 +710,10 @@ Copiar
         <div class="detail-item">
           <div class="detail-label">Situação</div>
           <div class="detail-value">${ramal.situacao || 'Não informado'}</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label">Fonte</div>
+          <div class="detail-value">${ramal.fonte || 'Não informado'}</div>
         </div>
         <div class="detail-item">
           <div class="detail-label">Obra</div>
