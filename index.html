@@ -577,6 +577,64 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
+    // ╔══════════════════════════════════════════════════════════════════════════╗
+    // ║  AKE — AXIOMATIC KERNEL ENGINE · UNIFIED FIELD THEORY                   ║
+    // ║  Protocolo: UFT-1.0 · Perfil Dependente · Backend: Sheets API + GitHub  ║
+    // ╠══════════════════════════════════════════════════════════════════════════╣
+    // ║  @domain    Infraestrutura Viária — Ramais Estaduais do Amazonas         ║
+    // ║  @author    Paulo Esteves Fernandes Neto — Chefe DMOB/SEINFRA-AM        ║
+    // ║  @version   1.0.0-ake                                                   ║
+    // ║  @build     GENESIS_RETROFIT                                            ║
+    // ║  @created   2026-03-24                                                  ║
+    // ║  @repo      github.com/leonzordhue/seinfra-ramais                       ║
+    // ║                                                                          ║
+    // ║  CLASSIFICAÇÃO AKE:                                                      ║
+    // ║    Perfil:        Dependente (Library remota: Sheets API + GeoJSON)      ║
+    // ║    Camada 1 (Library):   REMOTA — Google Sheets API v4 + GeoJSON GitHub ║
+    // ║    Camada 2 (Logic):     Parsing, busca GeoJSON, renderização de mapa   ║
+    // ║    Camada 4 (Log):       AKE_BUILD_LOG ativo                            ║
+    // ║    Camada 6 (UI):        Leaflet + ArcGIS imagery + selects + detalhes  ║
+    // ║                                                                          ║
+    // ║  ⚠ NOTA AKE-SOV: Arquivo NÃO soberano. Dados dependem de Google        ║
+    // ║  Sheets API e GeoJSON hospedado no GitHub. Dois pontos de falha.        ║
+    // ╚══════════════════════════════════════════════════════════════════════════╝
+
+    // ============================================================================
+    // CAMADA 4 — LOG ENGINE
+    // ============================================================================
+    var AKE_BUILD_LOG = [{
+      build: "1.0.0-ake",
+      data: "2026-03-24T10:20:00-04:00",
+      autor: "Paulo Esteves Fernandes Neto",
+      ia_assistente: "Claude Opus 4.6",
+      tipo: "GENESIS_RETROFIT",
+      descricao: "Retrofit AKE no index_ramais.html. Perfil Dependente — Sheets API + GeoJSON GitHub.",
+      estado_pre_retrofit: { linhas: 988, dados: "Sheets API v4 + GeoJSON repo seinfra-ramais" },
+      axiomas_identificados: [
+        "buscarFeatureGeoJson() — Matching ramal↔feature por código+número com tolerância de encoding",
+        "exibirDetalhes() — Renderização de ficha técnica com chip de status de obra",
+        "renderizarMapa() — Mapa Leaflet com traçado GeoJSON, fallback para marcador pontual",
+        "COL{} — Mapeamento de índices de colunas da planilha (axioma estrutural)"
+      ],
+      tentativas_falhas: [],
+      erros_corrigidos: []
+    }];
+
+    // ============================================================================
+    // CAMADA 1 — THE LIBRARY (Remota)
+    // ============================================================================
+
+    /**
+     * @meta Fonte de dados remota — Ramais Estaduais do Amazonas
+     * @source Google Sheets API v4 — Planilha de cadastro de ramais SEINFRA/AM
+     * @geojson GitHub raw: leonzordhue/seinfra-ramais/RAMAIS_SEINFRA.geojson
+     * @sheet_id 1Cr5Qbj_My7oOcIYiIjZ6NgJiCsij4ZAQCSxdP49cffc
+     * @coverage Ramais estaduais cadastrados na SEINFRA/AM (63 colunas, A:BK)
+     * @responsible Paulo E. F. Neto — DMOB/SEINFRA-AM
+     * @sovereignty DEPENDENTE — dois pontos de falha (Sheets API + GitHub)
+     * @ake_rule AKE-LIB-001
+     */
+
     // ========== CONFIGURAÇÕES ==========
     const SPREADSHEET_ID = '1Cr5Qbj_My7oOcIYiIjZ6NgJiCsij4ZAQCSxdP49cffc';
     const API_KEY        = 'AIzaSyBrK45p0mev1t5NyDJomdDIvJTe2DWaojA';
@@ -681,6 +739,14 @@
       }
     }
 
+    /**
+     * AXIOMA: Matching ramal ↔ feature GeoJSON por código+número
+     * @source  Cadastro SEINFRA — campo CÓDIGO (ex: "RA") + Número (ex: "356")
+     * @logic   Busca tolerante a variações de encoding Unicode (CÓDIGO vs CODIGO vs C\u00D3DIGO)
+     * @domain  Válido para GeoJSON com properties contendo campos CÓDIGO e Número
+     * @axiom_type Computacional (busca determinística com normalização)
+     * @ake_rule AKE-AXM-001
+     */
     // Busca a feature do GeoJSON que corresponde ao ramal (por CÓDIGO + Número)
     function buscarFeatureGeoJson(ramal) {
       if (!geoJsonData) return null;
