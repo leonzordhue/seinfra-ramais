@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#1A2B5E" />
+  <title>Consulta de Ramais — SEINFRA/AM</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Lexend+Deca:wght@300;400;500;600;700;800;900&family=Lexend+Zetta:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    :root {
+      --azul:        #1A2B5E;   /* navy primário — identidade 2026 */
+      --azul-mid:    #1E3575;
+      --azul-hover:  #152347;
+      --azul-claro:  #EBF0FA;
+      --azul-borda:  #C4D0E8;
+      --verde:       #2D8540;   /* verde institucional AM 2026 */
+      --verde-gov:   #2D8540;
+      --verde-cl:    #E8F5EC;
+      --verde-brd:   rgba(45,133,64,0.28);
+      --amarelo:     #F5A623;
+      --amarelo-cl:  #FEF3DC;
+      --amarelo-brd: #F5C878;
+      --cinza-txt:   #1A2540;
+      --cinza-med:   #4A5568;
+      --cinza-aux:   #8896A8;
+      --cinza-bg:    #F5F7FB;
+      --borda:       #E0E6F0;
+      --branco:      #FFFFFF;
+      --font:        'Lexend Deca', 'Outfit', sans-serif;
+      --font-head:   'Lexend Zetta', 'Outfit', sans-serif;
+      --font-cond:   'Barlow Condensed', 'Outfit', sans-serif;
+      --shadow:      0 2px 16px rgba(26,43,94,0.09), 0 0 0 1px var(--borda);
+      --radius:      12px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--font);
+      background: var(--cinza-bg);
+      color: var(--cinza-txt);
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+    }
+    ::selection { background: rgba(26,43,94,0.14); }
+
+    /* ── TOPBAR GOV ── */
+    .topbar-gov {
+      background: var(--azul); padding: 0.35rem 2rem;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .topbar-gov-text {
+      font-family: var(--font-cond); font-size: 0.65rem; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.5);
+    }
+    .topbar-gov-live {
+      display: flex; align-items: center; gap: 0.4rem;
+      font-family: var(--font-cond); font-size: 0.65rem; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase; color: var(--amarelo);
+    }
+    .topbar-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--amarelo); animation: pulse 2s ease-in-out infinite;
+    }
+
+    /* ── HEADER INSTITUCIONAL 2026 ── */
+    .site-header {
+      background: #fff; padding: 0.85rem 2rem;
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 2.5px solid var(--azul);
+      position: sticky; top: 0; z-index: 200;
+      box-shadow: 0 2px 20px rgba(26,43,94,0.08);
+    }
+    .header-brand { display: flex; align-items: center; gap: 1.1rem; }
+    .brand-gov    { display: flex; align-items: center; gap: 0.65rem; }
+    .brand-brasao { height: 50px; width: auto; display: block; }
+    .brand-gov-text { display: flex; flex-direction: column; line-height: 1; gap: 0.1rem; }
+    .brand-gov-label {
+      font-family: var(--font-cond); font-size: 0.7rem; font-weight: 700;
+      color: var(--verde); letter-spacing: 0.12em; text-transform: uppercase;
+    }
+    .brand-gov-estado {
+      font-family: var(--font-cond); font-size: 1.45rem; font-weight: 900;
+      color: var(--azul); letter-spacing: 0.02em; line-height: 1;
+    }
+    .brand-gov-slogan {
+      font-family: var(--font-cond); font-size: 0.6rem; font-weight: 600;
+      color: var(--verde); letter-spacing: 0.15em; text-transform: uppercase;
+    }
+    .brand-divider {
+      width: 1.5px; height: 44px;
+      background: linear-gradient(to bottom, transparent, var(--borda), transparent);
+      margin: 0 0.2rem; flex-shrink: 0;
+    }
+    .brand-seinfra { display: flex; flex-direction: column; line-height: 1.25; }
+    .brand-seinfra-pre {
+      font-family: 'Lexend Deca', sans-serif; font-size: 0.7rem;
+      font-weight: 400; color: var(--azul);
+    }
+    .brand-seinfra-name {
+      font-family: 'Lexend Zetta', sans-serif; font-size: 0.98rem;
+      font-weight: 700; color: var(--azul);
+    }
+    .header-right { display: flex; align-items: center; gap: 0.7rem; }
+    .header-badge-gov {
+      font-family: var(--font-cond); font-size: 0.72rem; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: #fff; background: var(--azul); padding: 0.35em 1.1em; border-radius: 100px;
+    }
+    .header-live {
+      display: flex; align-items: center; gap: 0.35rem;
+      font-family: var(--font-cond); font-size: 0.62rem; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase; color: var(--azul); opacity: 0.7;
+    }
+    .live-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: #22C55E; box-shadow: 0 0 6px #22C55E;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @media (max-width: 640px) {
+      .site-header { padding: 0.55rem 1rem; }
+      .topbar-gov { padding: 0.35rem 1rem; }
+      .topbar-gov-text { display: none; }
+      .brand-brasao { height: 36px; }
+      .brand-gov-estado { font-size: 1.05rem; }
+      .brand-gov-label, .brand-gov-slogan { font-size: 0.55rem; }
+      .brand-seinfra-name { font-size: 0.82rem; }
+      .brand-seinfra-pre { display: none; }
+      .brand-divider { display: none; }
+      .header-badge-gov { display: none; }
+      .header-live { display: none; }
+    }
+
+    /* MINI HERO */
+    .page-hero {
+      background: var(--azul);
+      padding: 2.5rem 2rem;
+      position: relative; overflow: hidden;
+    }
+    .page-hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: repeating-linear-gradient(-50deg, transparent, transparent 48px,
+        rgba(255,255,255,0.02) 48px, rgba(255,255,255,0.02) 49px);
+    }
+    .page-hero-accent {
+      position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+      background: linear-gradient(to bottom, var(--amarelo), transparent);
+    }
+    .page-hero-inner { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; }
+    .page-hero-eyebrow {
+      font-family: var(--font-cond);
+      font-size: 0.68rem; font-weight: 700; letter-spacing: 0.18em;
+      text-transform: uppercase; color: var(--amarelo);
+      margin-bottom: 0.6rem;
+    }
+    .page-hero-title {
+      font-family: var(--font-head);
+      font-size: clamp(1.6rem, 3.5vw, 2.4rem); font-weight: 900;
+      color: var(--branco); letter-spacing: -0.02em; line-height: 1.1;
+    }
+    .page-hero-eyebrow.cond { font-family: var(--font-cond); }
+    .page-hero-sub {
+      font-size: 0.9rem; color: rgba(255,255,255,0.6);
+      margin-top: 0.5rem; font-weight: 400;
+    }
+
+    .hero-wave { overflow: hidden; line-height: 0; }
+    .hero-wave svg { display: block; width: 100%; }
+
+    /* MAIN */
+    .main-wrap {
+      max-width: 1200px; margin: 0 auto;
+      padding: 2rem 2rem 4rem;
+    }
+
+    /* CARDS */
+    .card {
+      background: var(--branco);
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      margin-bottom: 1.5rem;
+    }
+    .card-header {
+      padding: 1.25rem 1.75rem;
+      border-bottom: 1px solid var(--borda);
+      background: var(--azul-claro);
+      display: flex; align-items: center; gap: 0.75rem;
+    }
+    .card-header-icon {
+      width: 34px; height: 34px; border-radius: 8px;
+      background: var(--azul);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem; flex-shrink: 0;
+    }
+    .card-header-title {
+      font-size: 0.95rem; font-weight: 700; color: var(--azul);
+    }
+    .card-body { padding: 1.75rem; }
+
+    /* FORMULÁRIO */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+    }
+    @media (max-width: 640px) { .form-grid { grid-template-columns: 1fr; } }
+
+    .form-group { display: flex; flex-direction: column; gap: 0.5rem; }
+    label {
+      font-size: 0.78rem; font-weight: 700;
+      letter-spacing: 0.05em; text-transform: uppercase;
+      color: var(--cinza-med);
+    }
+    select {
+      font-family: var(--font);
+      font-size: 0.92rem; font-weight: 500;
+      color: var(--cinza-txt);
+      background: var(--branco);
+      border: 1.5px solid var(--borda);
+      border-radius: 8px;
+      padding: 0.7rem 1rem;
+      outline: none;
+      cursor: pointer;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238896A8' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 1rem center;
+      padding-right: 2.5rem;
+    }
+    select:focus { border-color: var(--azul); box-shadow: 0 0 0 3px rgba(26,43,94,0.1); }
+    select:disabled { background-color: var(--cinza-bg); color: var(--cinza-aux); cursor: not-allowed; }
+
+    /* LOADING */
+    .loading-bar {
+      display: none;
+      align-items: center; gap: 0.75rem;
+      padding: 1rem 1.75rem;
+      background: var(--azul-claro);
+      border-top: 1px solid var(--azul-borda);
+      font-size: 0.85rem; color: var(--azul); font-weight: 600;
+    }
+    .loading-bar.show { display: flex; }
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2px solid var(--azul-borda);
+      border-top-color: var(--azul);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      flex-shrink: 0;
+    }
+
+    /* DETALHES */
+    .details-card { display: none; }
+    .details-card.show { display: block; }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    @media (max-width: 640px) { .detail-grid { grid-template-columns: 1fr; } }
+
+    .detail-item {}
+    .detail-label {
+      font-size: 0.68rem; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--cinza-aux); margin-bottom: 0.2rem;
+    }
+    .detail-value {
+      font-size: 0.95rem; font-weight: 600; color: var(--cinza-txt);
+    }
+    .detail-value.highlight { color: var(--azul); font-weight: 700; }
+
+    .status-chip {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      font-size: 0.68rem; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      padding: 0.3em 0.8em; border-radius: 100px;
+    }
+    .status-chip.obra {
+      color: var(--verde); background: #E6F4ED;
+      border: 1px solid rgba(0,123,62,0.2);
+    }
+    .status-chip.sem-obra {
+      color: var(--cinza-aux); background: var(--cinza-bg);
+      border: 1px solid var(--borda);
+    }
+    .chip-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+
+    /* LOCALIZAÇÃO / MAPA */
+    .map-section {
+      border-top: 1px solid var(--borda);
+      padding-top: 1.5rem;
+    }
+    .map-label {
+      font-size: 0.75rem; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--cinza-med);
+      display: flex; align-items: center; gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+    .map-label::before { content: '🗺️'; font-size: 0.9rem; }
+
+    /* WRAPPER DO MAPA */
+    .map-wrapper {
+      border-radius: 12px; overflow: hidden;
+      border: 1.5px solid var(--borda);
+      box-shadow: 0 4px 20px rgba(26,43,94,0.08);
+      position: relative;
+    }
+    .map-toolbar {
+      background: var(--branco);
+      border-bottom: 1px solid var(--borda);
+      padding: 0.65rem 1rem;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 0.75rem; flex-wrap: wrap;
+    }
+    .map-toolbar-info { display: flex; align-items: center; gap: 0.6rem; }
+    .map-ramal-badge {
+      font-size: 0.68rem; font-weight: 700; letter-spacing: 0.07em;
+      text-transform: uppercase;
+      background: var(--azul); color: #fff;
+      padding: 0.25em 0.8em; border-radius: 100px;
+    }
+    .map-coords-text {
+      font-family: 'Courier New', monospace;
+      font-size: 0.72rem; color: var(--cinza-aux);
+    }
+    .map-toolbar-actions { display: flex; gap: 0.45rem; }
+    .map-action-btn {
+      display: inline-flex; align-items: center; gap: 0.35rem;
+      font-family: var(--font); font-size: 0.72rem; font-weight: 700;
+      color: var(--azul); text-decoration: none;
+      background: var(--azul-claro); border: 1.5px solid var(--azul-borda);
+      padding: 0.38em 0.85em; border-radius: 100px;
+      cursor: pointer; transition: background 0.15s, transform 0.15s;
+      white-space: nowrap;
+    }
+    .map-action-btn:hover { background: var(--azul-borda); transform: translateY(-1px); }
+    #leaflet-map {
+      width: 100%; height: 360px; background: #e8eef5;
+    }
+    .map-legend {
+      background: var(--branco); border-top: 1px solid var(--borda);
+      padding: 0.55rem 1rem;
+      display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap;
+    }
+    .map-legend-item {
+      display: flex; align-items: center; gap: 0.4rem;
+      font-size: 0.68rem; color: var(--cinza-med); font-weight: 600;
+    }
+    .legend-line { width: 22px; height: 3px; border-radius: 2px; }
+    .legend-dot {
+      width: 10px; height: 10px; border-radius: 50%; border: 2.5px solid;
+    }
+    .map-loading-overlay {
+      position: absolute; inset: 0;
+      background: rgba(245,247,251,0.9);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 0.75rem; z-index: 999;
+    }
+    .map-loading-overlay.hidden { display: none; }
+    .map-loading-text { font-size: 0.85rem; font-weight: 600; color: var(--azul); }
+
+    /* FALLBACK: só ponto (sem traçado) */
+    .loc-card {
+      background: linear-gradient(135deg, var(--azul) 0%, #00408F 100%);
+      border-radius: 12px; padding: 1.5rem;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 1.25rem; flex-wrap: wrap;
+    }
+    .loc-card-left { display: flex; align-items: center; gap: 1rem; flex: 1; min-width: 0; }
+    .loc-icon-wrap {
+      width: 48px; height: 48px; border-radius: 12px;
+      background: rgba(255,255,255,0.12); border: 1.5px solid rgba(255,255,255,0.2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem; flex-shrink: 0;
+    }
+    .loc-info { min-width: 0; }
+    .loc-info-title {
+      font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em;
+      text-transform: uppercase; color: rgba(255,255,255,0.55); margin-bottom: 0.3rem;
+    }
+    .loc-coords { font-family: 'Courier New', monospace; font-size: 1rem; font-weight: 700; color: #fff; }
+    .loc-coords span { color: var(--amarelo); font-size: 0.82rem; font-weight: 500; margin-left: 0.5rem; font-family: var(--font); }
+    .loc-btn {
+      display: inline-flex; align-items: center; gap: 0.55rem;
+      font-family: var(--font); font-size: 0.82rem; font-weight: 700;
+      color: var(--azul); background: #fff; border: none;
+      padding: 0.75em 1.4em; border-radius: 100px; cursor: pointer;
+      text-decoration: none; white-space: nowrap;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+      transition: transform 0.15s, box-shadow 0.15s, background 0.15s; flex-shrink: 0;
+    }
+    .loc-btn:hover { background: var(--amarelo-cl); transform: translateY(-2px); }
+    .loc-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+    .loc-no-coords {
+      background: var(--cinza-bg); border: 1.5px dashed var(--borda);
+      border-radius: 12px; padding: 1.5rem;
+      display: flex; align-items: center; gap: 0.75rem;
+      font-size: 0.88rem; color: var(--cinza-aux); font-weight: 500;
+    }
+
+    /* ── FOOTER 2026 ── */
+    .site-footer {
+      background: var(--azul); color: rgba(255,255,255,0.6);
+      padding: 1.5rem 2rem; margin-top: 3rem;
+    }
+    .footer-inner {
+      max-width: 1200px; margin: 0 auto;
+      display: flex; align-items: flex-start; gap: 2rem; flex-wrap: wrap;
+    }
+    .footer-col { flex: 1; min-width: 0; }
+    .footer-item {
+      font-family: var(--font-cond); font-size: 0.72rem; font-weight: 500;
+      letter-spacing: 0.04em; color: rgba(255,255,255,0.6); line-height: 1.9;
+    }
+    .footer-vdiv {
+      width: 1px; background: rgba(255,255,255,0.15); align-self: stretch; flex-shrink: 0;
+    }
+    .footer-brand-wrap { text-align: right; white-space: nowrap; }
+    .footer-brand-pre {
+      font-family: var(--font-cond); font-size: 0.7rem; font-weight: 400;
+      color: rgba(255,255,255,0.5); letter-spacing: 0.08em; text-transform: uppercase;
+    }
+    .footer-brand-nome {
+      font-family: 'Lexend Zetta', sans-serif; font-size: 1.35rem; font-weight: 800;
+      color: #fff; letter-spacing: -0.01em; line-height: 1.1;
+    }
+    @media (max-width: 640px) {
+      .footer-inner { flex-direction: column; align-items: flex-start; gap: 0.6rem; }
+      .footer-vdiv { width: 100%; height: 1px; }
+      .footer-brand-wrap { text-align: left; }
+      .site-footer { padding: 1.2rem 1rem; }
+    }
+
+    @keyframes pulse {
+      0%,100% { opacity: 1; } 50% { opacity: 0.3; }
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  
+    /* ── BUSCA DE RAMAL ── */
+    .ramal-search-wrap { margin-bottom: 0.5rem; }
+    .ramal-search-inner { position: relative; display: flex; align-items: center; }
+    .ramal-search-icon {
+      position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%);
+      width: 16px; height: 16px; color: var(--cinza-aux); pointer-events: none; flex-shrink: 0;
+    }
+    .ramal-search-input {
+      font-family: var(--font); font-size: 0.88rem; font-weight: 500;
+      color: var(--cinza-txt); background: var(--branco);
+      border: 1.5px solid var(--borda); border-radius: 8px;
+      padding: 0.6rem 1rem 0.6rem 2.4rem;
+      outline: none; width: 100%;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .ramal-search-input:focus {
+      border-color: var(--azul); box-shadow: 0 0 0 3px rgba(26,43,94,0.1);
+    }
+    .ramal-search-input::placeholder { color: var(--cinza-aux); }
+  </style>
+</head>
+<body>
+<!-- HEADER GOV/SEINFRA 2026 -->
+<div class="topbar-gov">
+  <span class="topbar-gov-text">DMOB — Departamento de Mobilidade · SEINFRA/AM · 2026</span>
+  <div class="topbar-gov-live"><div class="topbar-dot"></div>Online</div>
+</div>
+<header class="site-header">
+  <div class="header-brand">
+    <div class="brand-gov">
+      <img src="https://leonzordhue.github.io/atlas-amazonas/assets/brasao_am.png"
+           alt="Brasão do Amazonas" class="brand-brasao"
+           onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
+      <div style="display:none;width:50px;height:50px;border-radius:8px;background:var(--azul);color:#fff;align-items:center;justify-content:center;font-size:1.6rem;flex-shrink:0">🦅</div>
+      <div class="brand-gov-text">
+        <div class="brand-gov-label">Governo do</div>
+        <div class="brand-gov-estado">Amazonas</div>
+        <div class="brand-gov-slogan">A Força da Nossa Gente</div>
+      </div>
+    </div>
+    <div class="brand-divider"></div>
+    <div class="brand-seinfra">
+      <div class="brand-seinfra-pre">Secretaria de</div>
+      <div class="brand-seinfra-name">Infraestrutura</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <a href="https://leonzordhue.github.io/painel-dmob/" target="_blank" style="font-family:var(--font-cond);font-size:0.7rem;font-weight:600;color:var(--azul);text-decoration:none;border:1.5px solid var(--azul-borda);padding:.32em .85em;border-radius:7px;text-transform:uppercase;letter-spacing:0.06em">← Painel</a>
+    <span class="header-badge-gov">Consulta de Ramais</span>
+    <div class="header-live"><div class="live-dot"></div>Online</div>
+  </div>
+</header>
+
+
+    <!-- HEADER -->
+  
+
+  <!-- MINI HERO -->
+  <div class="page-hero">
+    <div class="page-hero-accent"></div>
+    <div class="page-hero-inner">
+      <div class="page-hero-eyebrow">🚧 Base de Dados</div>
+      <div class="page-hero-title">Ramais Vicinais</div>
+      <div class="page-hero-sub">Consulta de ramais por município — SEINFRA/AM · 2026</div>
+    </div>
+  </div>
+  <div class="hero-wave">
+    <svg viewBox="0 0 1440 40" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0,28 C360,46 720,8 1080,28 C1260,38 1380,20 1440,28 L1440,40 L0,40 Z" fill="#F5F7FB"/>
+    </svg>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main-wrap">
+
+    <!-- Seletores -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header-icon">🔍</div>
+        <div class="card-header-title">Selecionar Ramal</div>
+      </div>
+      <div class="card-body">
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="municipioSelect">Município</label>
+            <select id="municipioSelect" onchange="onMunicipioChange()">
+              <option value="">Carregando municípios...</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="ramalSelect">Ramal</label>
+            <div class="ramal-search-wrap" id="ramalSearchWrap" style="display:none">
+              <div class="ramal-search-inner">
+                <svg class="ramal-search-icon" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="9" cy="9" r="6" stroke="currentColor" stroke-width="1.8"/>
+                  <path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                </svg>
+                <input type="text" id="ramalSearch" class="ramal-search-input"
+                       placeholder="Pesquisar ramal por nome..." autocomplete="off"
+                       oninput="filtrarRamais(this.value)" />
+              </div>
+            </div>
+            <select id="ramalSelect" onchange="onRamalChange()" disabled>
+              <option value="">Selecione um município primeiro</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="loading-bar" id="loading">
+        <div class="spinner"></div>
+        Carregando dados da base SEINFRA...
+      </div>
+    </div>
+
+    <!-- Detalhes do Ramal -->
+    <div class="card details-card" id="detalhesCard">
+      <div class="card-header">
+        <div class="card-header-icon">📋</div>
+        <div class="card-header-title" id="detalhesTitle">Informações do Ramal</div>
+      </div>
+      <div class="card-body">
+        <div class="detail-grid" id="detalhesGrid"></div>
+        <div class="map-section">
+          <div class="map-label">Traçado e Localização do Ramal</div>
+          <div id="mapContainer"></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main-wrap -->
+
+  <!-- FOOTER 2026 -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-col">
+        <div class="footer-item">www.seinfra.am.gov.br</div>
+        <div class="footer-item">Instagram: @seinfra.am</div>
+        <div class="footer-item">TikTok: @seinfra.am</div>
+        <div class="footer-item">facebook.com/seinfra.AM</div>
+      </div>
+      <div class="footer-vdiv"></div>
+      <div class="footer-col">
+        <div class="footer-item">gabinete@seinfra.am.gov.br</div>
+        <div class="footer-item">Fone: (92) 9 9263-0198</div>
+        <div class="footer-item">Av. Arq. José Henriques Bento Rodrigues, 3760</div>
+        <div class="footer-item">Monte das Oliveiras · Manaus/AM · CEP: 69093-149</div>
+      </div>
+      <div class="footer-vdiv"></div>
+      <div class="footer-brand-wrap">
+        <div class="footer-brand-pre">Secretaria de</div>
+        <div class="footer-brand-nome">Infraestrutura</div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    // ╔══════════════════════════════════════════════════════════════════════════╗
+    // ║  AKE — AXIOMATIC KERNEL ENGINE · UNIFIED FIELD THEORY                   ║
+    // ║  Protocolo: UFT-1.0 · Perfil Dependente · Backend: Sheets API + GitHub  ║
+    // ╠══════════════════════════════════════════════════════════════════════════╣
+    // ║  @domain    Infraestrutura Viária — Ramais Estaduais do Amazonas         ║
+    // ║  @author    Paulo Esteves Fernandes Neto — Chefe DMOB/SEINFRA-AM        ║
+    // ║  @version   1.0.0-ake                                                   ║
+    // ║  @build     GENESIS_RETROFIT                                            ║
+    // ║  @created   2026-03-24                                                  ║
+    // ║  @repo      github.com/leonzordhue/seinfra-ramais                       ║
+    // ║                                                                          ║
+    // ║  CLASSIFICAÇÃO AKE:                                                      ║
+    // ║    Perfil:        Dependente (Library remota: Sheets API + GeoJSON)      ║
+    // ║    Camada 1 (Library):   REMOTA — Google Sheets API v4 + GeoJSON GitHub ║
+    // ║    Camada 2 (Logic):     Parsing, busca GeoJSON, renderização de mapa   ║
+    // ║    Camada 4 (Log):       AKE_BUILD_LOG ativo                            ║
+    // ║    Camada 6 (UI):        Leaflet + ArcGIS imagery + selects + detalhes  ║
+    // ║                                                                          ║
+    // ║  ⚠ NOTA AKE-SOV: Arquivo NÃO soberano. Dados dependem de Google        ║
+    // ║  Sheets API e GeoJSON hospedado no GitHub. Dois pontos de falha.        ║
+    // ╚══════════════════════════════════════════════════════════════════════════╝
+
+    // ============================================================================
+    // CAMADA 4 — LOG ENGINE
+    // ============================================================================
+    var AKE_BUILD_LOG = [{
+      build: "1.0.0-ake",
+      data: "2026-03-24T10:20:00-04:00",
+      autor: "Paulo Esteves Fernandes Neto",
+      ia_assistente: "Claude Opus 4.6",
+      tipo: "GENESIS_RETROFIT",
+      descricao: "Retrofit AKE no index_ramais.html. Perfil Dependente — Sheets API + GeoJSON GitHub.",
+      estado_pre_retrofit: { linhas: 988, dados: "Sheets API v4 + GeoJSON repo seinfra-ramais" },
+      axiomas_identificados: [
+        "buscarFeatureGeoJson() — Matching ramal↔feature por código+número com tolerância de encoding",
+        "exibirDetalhes() — Renderização de ficha técnica com chip de status de obra",
+        "renderizarMapa() — Mapa Leaflet com traçado GeoJSON, fallback para marcador pontual",
+        "COL{} — Mapeamento de índices de colunas da planilha (axioma estrutural)"
+      ],
+      tentativas_falhas: [],
+      erros_corrigidos: []
+    }];
+
+    // ============================================================================
+    // CAMADA 1 — THE LIBRARY (Remota)
+    // ============================================================================
+
+    /**
+     * @meta Fonte de dados remota — Ramais Estaduais do Amazonas
+     * @source Google Sheets API v4 — Planilha de cadastro de ramais SEINFRA/AM
+     * @geojson GitHub raw: leonzordhue/seinfra-ramais/RAMAIS_SEINFRA.geojson
+     * @sheet_id 1Cr5Qbj_My7oOcIYiIjZ6NgJiCsij4ZAQCSxdP49cffc
+     * @coverage Ramais estaduais cadastrados na SEINFRA/AM (63 colunas, A:BK)
+     * @responsible Paulo E. F. Neto — DMOB/SEINFRA-AM
+     * @sovereignty DEPENDENTE — dois pontos de falha (Sheets API + GitHub)
+     * @ake_rule AKE-LIB-001
+     */
+
+    // ========== CONFIGURAÇÕES ==========
+    const SPREADSHEET_ID = '1Cr5Qbj_My7oOcIYiIjZ6NgJiCsij4ZAQCSxdP49cffc';
+    const API_KEY        = 'AIzaSyBrK45p0mev1t5NyDJomdDIvJTe2DWaojA';
+    const SHEET_NAME     = 'Ramais';
+    const RANGE          = `${SHEET_NAME}!A:BK`;
+
+    // ⚠️ SUBSTITUA pela URL raw do seu GitHub após subir o arquivo
+    const GEOJSON_URL = 'https://raw.githubusercontent.com/leonzordhue/seinfra-ramais/main/RAMAIS_SEINFRA.geojson';
+
+    let sheetData          = [];
+    let ramaisPorMunicipio = {};
+    let _ramaisAtivos      = [];     // lista do município selecionado, para filtro
+    let geoJsonData        = null;   // cache do GeoJSON completo
+    let leafletMap         = null;   // instância do mapa Leaflet
+    let tracadoLayer       = null;   // layer do traçado atual
+    let marcadorInicio     = null;   // marcador ponto inicial
+
+    const COL = {
+      CODIGO: 0, NUMERO: 1, NOME: 2, MUNICIPIO: 9, EXTENSAO: 11,
+      INICIO: 7, FIM: 8, LATITUDE: 14, LONGITUDE: 15,
+      REVESTIMENTO: 51, FONTE: 53, SITUACAO: 54, PONTO_REF: 6
+    };
+
+    // ========== INICIALIZAÇÃO ==========
+    document.addEventListener('DOMContentLoaded', () => {
+      carregarDados();
+      carregarGeoJson(); // carrega em paralelo já na abertura
+    });
+
+    // ========== CARREGAR PLANILHA ==========
+    async function carregarDados() {
+      const loading = document.getElementById('loading');
+      loading.classList.add('show');
+      const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${RANGE}?key=${API_KEY}`;
+      try {
+        const resp = await fetch(url);
+        if (!resp.ok) throw new Error(`Erro HTTP: ${resp.status}`);
+        const data = await resp.json();
+        const rows = data.values || [];
+        if (rows.length === 0) throw new Error('Nenhum dado encontrado');
+
+        sheetData = rows.slice(1).map((row, index) => {
+          const obj = {
+            rowIndex:       index + 2,
+            codigo:         row[COL.CODIGO]      || '',
+            numero:         row[COL.NUMERO]      || '',
+            nome:           row[COL.NOME]        || '',
+            municipio:      row[COL.MUNICIPIO]   || '',
+            extensao:       parseFloat((row[COL.EXTENSAO] || '0').replace(',', '.')) || 0,
+            inicio:         row[COL.INICIO]      || '',
+            fim:            row[COL.FIM]         || '',
+            latitude:       parseFloat((row[COL.LATITUDE]  || '').replace(',', '.')) || null,
+            longitude:      parseFloat((row[COL.LONGITUDE] || '').replace(',', '.')) || null,
+            situacao:       row[COL.SITUACAO]    || '',
+            revestimento:   row[COL.REVESTIMENTO]|| '',
+            fonte:          row[COL.FONTE]        || '',
+            pontoReferencia:row[COL.PONTO_REF]   || ''
+          };
+          // valida coordenadas
+          if (obj.latitude  && (obj.latitude  < -90  || obj.latitude  > 90))  obj.latitude  = null;
+          if (obj.longitude && (obj.longitude < -180 || obj.longitude > 180)) obj.longitude = null;
+
+          const sit = obj.situacao.toUpperCase();
+          obj.temObra = sit.includes('EM OBRA') && !sit.includes('EXTINTA');
+          const ident = [];
+          if (obj.codigo) ident.push(obj.codigo);
+          if (obj.numero) ident.push(obj.numero);
+          obj.nomeCompleto = ident.length ? ident.join(' - ') + ' - ' + obj.nome : obj.nome;
+          return obj;
+        }).filter(row => row.municipio);
+
+        ramaisPorMunicipio = {};
+        sheetData.forEach(ramal => {
+          const mun = ramal.municipio;
+          if (!ramaisPorMunicipio[mun]) ramaisPorMunicipio[mun] = [];
+          ramaisPorMunicipio[mun].push(ramal);
+        });
+
+        popularMunicipios();
+      } catch (error) {
+        console.error(error);
+        alert('Erro ao carregar dados da planilha: ' + error.message);
+      } finally {
+        loading.classList.remove('show');
+      }
+    }
+
+    // ========== CARREGAR GEOJSON ==========
+    async function carregarGeoJson() {
+      try {
+        const resp = await fetch(GEOJSON_URL);
+        if (!resp.ok) throw new Error('GeoJSON não encontrado');
+        geoJsonData = await resp.json();
+        console.log(`✅ GeoJSON carregado: ${geoJsonData.features.length} features`);
+
+        // Debug: mostra as chaves reais do primeiro feature
+        const primeiraChave = Object.keys(geoJsonData.features[0].properties);
+        console.log('🔑 Chaves do GeoJSON:', primeiraChave.filter(k => k.includes('D') || k.includes('m') || k.includes('N')));
+
+      } catch (e) {
+        console.warn('⚠️ GeoJSON não carregado:', e.message);
+        geoJsonData = null;
+      }
+    }
+
+    /**
+     * AXIOMA: Matching ramal ↔ feature GeoJSON por código+número
+     * @source  Cadastro SEINFRA — campo CÓDIGO (ex: "RA") + Número (ex: "356")
+     * @logic   Busca tolerante a variações de encoding Unicode (CÓDIGO vs CODIGO vs C\u00D3DIGO)
+     * @domain  Válido para GeoJSON com properties contendo campos CÓDIGO e Número
+     * @axiom_type Computacional (busca determinística com normalização)
+     * @ake_rule AKE-AXM-001
+     */
+    // Busca a feature do GeoJSON que corresponde ao ramal (por CÓDIGO + Número)
+    function buscarFeatureGeoJson(ramal) {
+      if (!geoJsonData) return null;
+
+      const codigoAlvo  = String(ramal.codigo).trim().toUpperCase();
+      const numeroAlvo  = String(ramal.numero).trim();
+
+      return geoJsonData.features.find(f => {
+        const p = f.properties;
+
+        // Pega o valor de CÓDIGO tolerando variações de encoding
+        const codigoFeature = String(
+          p['CÓDIGO'] || p['CODIGO'] || p['C\u00D3DIGO'] || ''
+        ).trim().toUpperCase();
+
+        // Pega o valor de Número tolerando variações
+        const numeroFeature = String(
+          p['Número'] || p['Numero'] || p['N\u00FAmero'] || p['N\u00FAmero_2'] || ''
+        ).trim();
+
+        return codigoFeature === codigoAlvo && numeroFeature === numeroAlvo;
+      }) || null;
+    }
+
+    // ========== SELECTS ==========
+    function popularMunicipios() {
+      const select = document.getElementById('municipioSelect');
+      const municipios = Object.keys(ramaisPorMunicipio).sort((a, b) => a.localeCompare(b));
+      select.innerHTML = '<option value="">Selecione um município</option>';
+      municipios.forEach(m => {
+        const opt = document.createElement('option');
+        opt.value   = m;
+        opt.textContent = `${m} (${ramaisPorMunicipio[m].length})`;
+        select.appendChild(opt);
+      });
+      if (municipios.length === 0)
+        select.innerHTML = '<option value="">Nenhum município encontrado</option>';
+    }
+
+    function onMunicipioChange() {
+      const mun = document.getElementById('municipioSelect').value;
+      const ramalSelect = document.getElementById('ramalSelect');
+      const sw = document.getElementById('ramalSearchWrap');
+      const si = document.getElementById('ramalSearch');
+      document.getElementById('detalhesCard').classList.remove('show');
+      if (!mun) {
+        if (sw) { sw.style.display = 'none'; }
+        if (si) { si.value = ''; }
+        _ramaisAtivos = [];
+        ramalSelect.innerHTML = '<option value="">Selecione um município primeiro</option>';
+        ramalSelect.disabled = true;
+        return;
+      }
+      if (sw) sw.style.display = 'block';
+      if (si) si.value = '';
+      const ramais = ramaisPorMunicipio[mun] || [];
+      ramalSelect.innerHTML = '<option value="">Selecione um ramal</option>';
+      ramais.sort((a, b) => a.nomeCompleto.localeCompare(b.nomeCompleto));
+      _ramaisAtivos = ramais; // salvar para filtro
+      ramais.forEach(r => {
+        const opt = document.createElement('option');
+        opt.value = r.rowIndex;
+        opt.textContent = r.nomeCompleto;
+        ramalSelect.appendChild(opt);
+      });
+      ramalSelect.disabled = false;
+    }
+
+    // ========== FILTRO POR NOME DE RAMAL ==========
+    function filtrarRamais(query) {
+      const q = (query || '').trim().toLowerCase();
+      const ramalSelect = document.getElementById('ramalSelect');
+      const lista = q
+        ? _ramaisAtivos.filter(r => (r.nomeCompleto || '').toLowerCase().includes(q))
+        : _ramaisAtivos;
+
+      document.getElementById('detalhesCard').classList.remove('show');
+      ramalSelect.innerHTML = '<option value="">Selecione um ramal</option>';
+      lista.forEach(r => {
+        const opt = document.createElement('option');
+        opt.value       = r.rowIndex;
+        opt.textContent = r.nomeCompleto;
+        ramalSelect.appendChild(opt);
+      });
+
+      if (lista.length === 0) {
+        ramalSelect.innerHTML = '<option value="">Nenhum ramal encontrado para "' + query + '"</option>';
+      }
+    }
+
+    function onRamalChange() {
+      const rowIndex = document.getElementById('ramalSelect').value;
+      if (!rowIndex) {
+        document.getElementById('detalhesCard').classList.remove('show');
+        return;
+      }
+      const ramal = sheetData.find(r => r.rowIndex == rowIndex);
+      if (!ramal) return;
+      exibirDetalhes(ramal);
+    }
+
+    // ========== EXIBIR DETALHES ==========
+    function exibirDetalhes(ramal) {
+      const card   = document.getElementById('detalhesCard');
+      const grid   = document.getElementById('detalhesGrid');
+      const title  = document.getElementById('detalhesTitle');
+      const mapDiv = document.getElementById('mapContainer');
+
+      title.textContent = ramal.nomeCompleto || 'Informações do Ramal';
+
+      const obraChip = ramal.temObra
+        ? `<span class="status-chip obra"><span class="chip-dot"></span>Em Obra</span>`
+        : `<span class="status-chip sem-obra"><span class="chip-dot"></span>Sem obra ativa</span>`;
+
+      const coordText = (ramal.latitude && ramal.longitude)
+        ? `${ramal.latitude.toFixed(6)}, ${ramal.longitude.toFixed(6)}`
+        : 'Não disponível';
+
+      grid.innerHTML = `
+        <div class="detail-item">
+          <div class="detail-label">Município</div>
+          <div class="detail-value highlight">${ramal.municipio}</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label">Extensão</div>
+          <div class="detail-value highlight">${ramal.extensao.toFixed(2)} km</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label">Revestimento</div>
+          <div class="detail-value">${ramal.revestimento || 'Não informado'}</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label">Situação</div>
+          <div class="detail-value">${ramal.situacao || 'Não informado'}</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label">Fonte</div>
+          <div class="detail-value">${ramal.fonte || 'Não informado'}</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label">Obra</div>
+          <div class="detail-value">${obraChip}</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label">Ponto de Referência</div>
+          <div class="detail-value">${ramal.pontoReferencia || 'Não informado'}</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label">Início</div>
+          <div class="detail-value">${ramal.inicio || 'N/I'}</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label">Fim</div>
+          <div class="detail-value">${ramal.fim || 'N/I'}</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label">Coordenadas (início)</div>
+          <div class="detail-value">${coordText}</div>
+        </div>
+      `;
+
+      // Renderizar mapa
+      renderizarMapa(ramal, mapDiv);
+
+      card.classList.add('show');
+      card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // ========== MAPA LEAFLET ==========
+    function renderizarMapa(ramal, container) {
+      const feature = buscarFeatureGeoJson(ramal);
+      const temTracado = !!feature;
+      const temCoordenadas = !!(ramal.latitude && ramal.longitude);
+
+      if (!temTracado && !temCoordenadas) {
+        container.innerHTML = `
+          <div class="loc-no-coords">
+            <span>📍</span>
+            Coordenadas e traçado não disponíveis para este ramal
+          </div>`;
+        return;
+      }
+
+      const mapsUrl = temCoordenadas
+        ? `https://www.google.com/maps?q=${ramal.latitude},${ramal.longitude}&z=15`
+        : null;
+
+      const coordLabel = temCoordenadas
+        ? `${ramal.latitude.toFixed(5)}, ${ramal.longitude.toFixed(5)}`
+        : 'Traçado disponível';
+
+      const badgeTracado = temTracado
+        ? `<span class="map-ramal-badge">📐 Traçado disponível</span>`
+        : `<span class="map-ramal-badge" style="background:var(--cinza-aux)">📍 Ponto de início</span>`;
+
+      container.innerHTML = `
+        <div class="map-wrapper">
+          <div class="map-toolbar">
+            <div class="map-toolbar-info">
+              ${badgeTracado}
+              <span class="map-coords-text">${coordLabel}</span>
+            </div>
+            <div class="map-toolbar-actions">
+              <button class="map-action-btn" onclick="centralizarMapa()">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>
+                Centralizar
+              </button>
+              ${mapsUrl ? `<a href="${mapsUrl}" target="_blank" rel="noopener" class="map-action-btn">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                Ver no Maps
+              </a>` : ''}
+            </div>
+          </div>
+
+          <div style="position:relative;">
+            <div id="leaflet-map"></div>
+            <div class="map-loading-overlay" id="mapLoadingOverlay">
+              <div class="spinner"></div>
+              <div class="map-loading-text">Carregando mapa...</div>
+            </div>
+          </div>
+
+          <div class="map-legend">
+            ${temTracado ? `
+            <div class="map-legend-item">
+              <div class="legend-line" style="background:#1A2B5E;"></div>
+              Traçado do ramal
+            </div>` : ''}
+            ${temCoordenadas ? `
+            <div class="map-legend-item">
+              <div class="legend-dot" style="background:#F5A623;border-color:#1A2B5E;"></div>
+              Ponto de início
+            </div>` : ''}
+            <div class="map-legend-item" style="margin-left:auto;color:var(--cinza-aux);font-weight:400;">
+              © OpenStreetMap contributors
+            </div>
+          </div>
+        </div>`;
+
+      // Destruir mapa anterior se existir
+      if (leafletMap) {
+        leafletMap.remove();
+        leafletMap = null;
+        tracadoLayer = null;
+        marcadorInicio = null;
+      }
+
+      // Inicializar Leaflet
+      setTimeout(() => {
+        const overlay = document.getElementById('mapLoadingOverlay');
+
+        // Centro inicial: coordenada do ramal ou primeiro ponto do traçado
+        let centroLat = ramal.latitude || -3.5;
+        let centroLon = ramal.longitude || -62.0;
+        let zoomInicial = 13;
+
+        if (!temCoordenadas && temTracado) {
+          const firstCoord = feature.geometry.coordinates[0][0];
+          centroLon = firstCoord[0];
+          centroLat = firstCoord[1];
+        }
+
+        leafletMap = L.map('leaflet-map', {
+          center: [centroLat, centroLon],
+          zoom: zoomInicial,
+          zoomControl: true,
+          attributionControl: false
+        });
+
+        // Tile layer — OpenStreetMap
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19
+        }).addTo(leafletMap);
+
+        // Tile layer satelite (opcional, comentado)
+        // L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}').addTo(leafletMap);
+
+        // Traçado GeoJSON
+        if (temTracado) {
+          tracadoLayer = L.geoJSON(feature, {
+            style: {
+              color: '#1A2B5E',
+              weight: 4,
+              opacity: 0.92,
+              lineJoin: 'round',
+              lineCap: 'round'
+            }
+          }).addTo(leafletMap);
+
+          // Ajusta zoom para cobrir todo o traçado
+          leafletMap.fitBounds(tracadoLayer.getBounds(), { padding: [30, 30] });
+        }
+
+        // Marcador ponto de início
+        if (temCoordenadas) {
+          const iconeInicio = L.divIcon({
+            html: `<div style="
+              width:16px;height:16px;border-radius:50%;
+              background:#F5A623;border:3px solid #1A2B5E;
+              box-shadow:0 2px 8px rgba(0,0,0,0.35);
+            "></div>`,
+            className: '',
+            iconSize: [16, 16],
+            iconAnchor: [8, 8]
+          });
+
+          marcadorInicio = L.marker([ramal.latitude, ramal.longitude], { icon: iconeInicio })
+            .addTo(leafletMap)
+            .bindPopup(`
+              <div style="font-family: var(--font);font-size:0.82rem;min-width:180px;">
+                <div style="font-weight:700;color:#1A2B5E;margin-bottom:4px;">${ramal.nome}</div>
+                <div style="color:#4A5568;">${ramal.municipio}</div>
+                <div style="font-family:monospace;font-size:0.75rem;color:#8896A8;margin-top:4px;">
+                  ${ramal.latitude.toFixed(6)}, ${ramal.longitude.toFixed(6)}
+                </div>
+              </div>
+            `, { maxWidth: 240 });
+        }
+
+        overlay.classList.add('hidden');
+      }, 80);
+    }
+
+    function centralizarMapa() {
+      if (!leafletMap) return;
+      if (tracadoLayer) {
+        leafletMap.fitBounds(tracadoLayer.getBounds(), { padding: [30, 30] });
+      } else if (marcadorInicio) {
+        leafletMap.setView(marcadorInicio.getLatLng(), 14);
+      }
+    }
+
+    // ── AKE UFT-1.0 — Build Log ──
+    window._VERSION_LOG = window._VERSION_LOG || [];
+    window._VERSION_LOG.push({ rev:"v2.0", data:"2026-05-25", descricao:"Identidade Visual 2026 + campo de busca de ramais por nome" });
+    window._VICIOS_CONHECIDOS = window._VICIOS_CONHECIDOS || [];
+  </script>
+
+</body>
+</html>
